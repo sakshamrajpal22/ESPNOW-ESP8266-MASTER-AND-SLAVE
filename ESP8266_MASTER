@@ -1,0 +1,73 @@
+// THIS CODE IS MADE BY SAKSHAM RAJPAL -- iOT India YOUTUBE CHANNEL !!!
+
+#include <ESP8266WiFi.h>
+#include <espnow.h>
+
+// Slave MAC Address (Update this with the correct receiver MAC)
+uint8_t mac[] = {0xSS, 0xSS, 0xSS, 0xSS, 0xSS, 0xSS}; // HERE UPDATE THE MAC ADDRESS OF THE SLAVE DEVICE !!!
+uint8_t data = 0;
+
+// Callback when data is sent
+void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
+  Serial.print("Last Packet Sent to: ");
+  for (int i = 0; i < 6; i++) {
+    Serial.printf("%02X", mac_addr[i]);
+    if (i < 5) Serial.print(":");
+  }
+  Serial.println();
+  Serial.print("Send Status: ");
+  Serial.println(sendStatus == 0 ? "Delivery Success" : "Delivery Fail");
+}
+
+// Initialize ESP-NOW
+void InitESPNow() {
+  WiFi.disconnect();
+  if (esp_now_init() == 0) {
+    Serial.println("ESPNow Init Success");
+  } else {
+    Serial.println("ESPNow Init Failed");
+    ESP.restart();
+  }
+}
+
+// Manage Slave Pairing (ESP8266-Compatible)
+void manageSlave() {
+  if (esp_now_add_peer(mac, WiFi.channel(), ESP_NOW_ROLE_SLAVE, NULL, 0) == 0) {
+    Serial.println("Slave Added Successfully");
+  } else {
+    Serial.println("Failed to Add Slave");
+  }
+}
+
+// Send data to the slave
+void sendData() {
+  data = !digitalRead(0); // IF YOU HAVE CHANGED BUTTON PIN FROM GPIO 0 ALSO UPDATE HERE
+
+  Serial.print("Sending: ");
+  Serial.println(data);
+
+  if (esp_now_send(mac, &data, sizeof(data)) == 0) {
+    Serial.println("Send Success");
+  } else {
+    Serial.println("Send Fail");
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(0, INPUT_PULLUP); // IF YOU WANT TO CHANGE BUTTON GPIO PIN YOU CAN CHANGE FROM HERE
+ 
+  WiFi.mode(WIFI_STA);
+  Serial.print("STA MAC: ");
+  Serial.println(WiFi.macAddress());
+
+  InitESPNow();
+  esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER); // Set sender role
+  esp_now_register_send_cb(OnDataSent);
+  manageSlave();
+}
+
+void loop() {
+  sendData();
+  delay(10); // Adjust delay as needed
+}
