@@ -1,0 +1,16 @@
+#include <ESP8266WiFi.h>
+
+void setup() {
+    Serial.begin(115200); // Start serial communication
+    delay(1000); // Small delay for stability
+    
+    Serial.println("Getting ESP8266 MAC Address...");
+    
+    // Get and print the MAC address
+    Serial.print("MAC Address: ");
+    Serial.println(WiFi.macAddress());
+}
+
+void loop() {
+    // Nothing to do here
+}
