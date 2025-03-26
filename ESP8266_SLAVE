@@ -1,0 +1,54 @@
+// THIS CODE IS MADE BY SAKSHAM RAJPAL -- iOT India YOUTUBE CHANNEL !!!
+
+#include <ESP8266WiFi.h>
+#include <espnow.h>
+
+#define CHANNEL 0 // Set the Wi-Fi channel
+#define LED_PIN 2 // GPIO pin to control the LED
+
+// Callback when data is received
+void OnDataRecv(uint8_t *mac, uint8_t *data, uint8_t len) {
+  char macStr[18];
+  snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+  Serial.print("Last Packet Received from: ");
+  Serial.println(macStr);
+  Serial.print("Last Packet Received Data: ");
+  Serial.println(*data);
+
+  // Control the LED based on received data
+  digitalWrite(LED_PIN, *data);
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW); // Ensure the LED starts off
+
+  Serial.println("ESPNow/Basic/Slave Example for ESP8266");
+
+  // Set device in SoftAP mode
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("Slave_1", "Slave_1_Password", CHANNEL, 0);
+
+  // Print the MAC address of the ESP8266
+  Serial.print("AP MAC: ");
+  Serial.println(WiFi.softAPmacAddress());
+
+  // Initialize ESP-NOW
+  if (esp_now_init() == 0) {
+    Serial.println("ESPNow Init Success");
+  } else {
+    Serial.println("ESPNow Init Failed");
+    ESP.restart();
+  }
+
+  // Register the callback for receiving data
+  esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
+  esp_now_register_recv_cb(OnDataRecv);
+}
+
+void loop() {
+  // No tasks in loop
+}
